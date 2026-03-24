@@ -3,7 +3,7 @@ import { FolderOpen, Plus, Edit2, Trash2, Eye, Search, X, Save, Tag, Package, Bo
 import { useData } from '../contexts/DataContext';
 
 const CategoryPage = () => {
-  const { categories, addCategory, updateCategory, deleteCategory } = useData();
+  const { categories, addCategory, updateCategory, deleteCategory, products } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -17,8 +17,8 @@ const CategoryPage = () => {
   const categoryTypes = ['Physical Goods', 'Digital', 'Services'];
 
   const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.type.toLowerCase().includes(searchTerm.toLowerCase())
+    (category.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (category.type || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddCategory = () => {
@@ -69,14 +69,11 @@ const CategoryPage = () => {
     }
   };
 
-  const getCategoryStats = (type) => {
-    // Mock stats for demonstration
-    switch(type) {
-      case 'Physical Goods': return { items: 1245, growth: '+12%' };
-      case 'Digital': return { items: 342, growth: '+28%' };
-      case 'Services': return { items: 89, growth: '+5%' };
-      default: return { items: 0, growth: '0%' };
-    }
+  const getCategoryStats = (categoryName) => {
+    const count = products.filter(p =>
+      (p.division || '').toLowerCase() === (categoryName || '').toLowerCase()
+    ).length;
+    return { items: count, growth: count > 0 ? `+${count}` : '0' };
   };
 
   return (
@@ -166,11 +163,11 @@ const CategoryPage = () => {
                 <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
                   <div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Items</p>
-                    <p className="text-sm font-bold text-gray-900">{getCategoryStats(category.type).items}</p>
+                    <p className="text-sm font-bold text-gray-900">{getCategoryStats(category.name).items}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Growth</p>
-                    <p className="text-sm font-bold text-green-600">{getCategoryStats(category.type).growth}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Products</p>
+                    <p className="text-sm font-bold text-green-600">{getCategoryStats(category.name).growth}</p>
                   </div>
                 </div>
               </div>
@@ -200,8 +197,8 @@ const CategoryPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-500 uppercase text-xs tracking-widest font-bold">{category.type}</td>
-                    <td className="px-6 py-4 text-gray-500">{getCategoryStats(category.type).items}</td>
-                    <td className="px-6 py-4 font-bold text-green-600">{getCategoryStats(category.type).growth}</td>
+                    <td className="px-6 py-4 text-gray-500">{getCategoryStats(category.name).items}</td>
+                    <td className="px-6 py-4 font-bold text-green-600">{getCategoryStats(category.name).growth}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => handleEditCategory(category)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
@@ -398,15 +395,15 @@ const CategoryPage = () => {
                   <Package className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-600">Total Items</p>
-                    <p className="font-medium text-gray-900">{getCategoryStats(viewingCategory.type).items}</p>
+                    <p className="font-medium text-gray-900">{getCategoryStats(viewingCategory.name).items}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <Archive className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-600">Growth Rate</p>
-                    <p className="font-medium text-green-600">{getCategoryStats(viewingCategory.type).growth}</p>
+                    <p className="text-sm text-gray-600">Products in Category</p>
+                    <p className="font-medium text-green-600">{getCategoryStats(viewingCategory.name).growth}</p>
                   </div>
                 </div>
               </div>

@@ -44,7 +44,8 @@ const CustomerPage = () => {
   };
 
   const handleUpdateCustomer = () => {
-    updateCustomer(editingCustomer.id, formData);
+    const id = editingCustomer.id;
+    updateCustomer(id, formData);
     setEditingCustomer(null);
     setFormData({ name: '', email: '', phone: '', address: '', state: '', pincode: '' });
   };

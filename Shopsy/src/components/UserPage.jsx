@@ -51,6 +51,7 @@ const UserPage = () => {
             <thead>
               <tr className="text-gray-400 text-xs uppercase tracking-wider">
                 <th className="px-6 py-4 font-semibold">Name</th>
+                <th className="px-6 py-4 font-semibold">Username</th>
                 <th className="px-6 py-4 font-semibold">Email</th>
                 <th className="px-6 py-4 font-semibold">Phone</th>
                 <th className="px-6 py-4 font-semibold">Role</th>
@@ -63,11 +64,12 @@ const UserPage = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs uppercase">
-                        {user.name.charAt(0)}
+                        {(user.name || user.username || 'U').charAt(0)}
                       </div>
-                      <span className="font-medium text-gray-900">{user.name}</span>
+                      <span className="font-medium text-gray-900">{user.name || user.username}</span>
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-gray-500 font-mono text-xs">{user.username || '—'}</td>
                   <td className="px-6 py-4 text-gray-500">{user.email}</td>
                   <td className="px-6 py-4 text-gray-500">{user.phone || '-'}</td>
                   <td className="px-6 py-4">

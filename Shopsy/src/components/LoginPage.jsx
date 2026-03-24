@@ -1,36 +1,46 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { useData } from '../contexts/DataContext';
+import { loginUser, registerUser } from '../Service.js/AuthService';
 
 const LoginPage = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [regUsername, setRegUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const { registerUser, registeredUsers } = useData();
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isRegistering) {
-      if (email && password && name) {
-        registerUser({ name, email, phone, password });
-        setIsRegistering(false);
-        setPassword('');
-        alert("Account created successfully! Please sign in.");
-      }
-    } else {
-      if (email && password) {
-        const user = registeredUsers.find(u => u.email === email && u.password === password) || registeredUsers.find(u => u.email === email);
-        if (user) {
+    setError('');
+    setLoading(true);
+    try {
+      if (isRegistering) {
+        if (email && password && name && regUsername) {
+          await registerUser({ name, username: regUsername, email, phone, password });
+          setIsRegistering(false);
+          setPassword('');
+          setRegUsername('');
+          setName('');
+          setPhone('');
+          setEmail('');
+          alert('Account created successfully! Please sign in.');
+        }
+      } else {
+        if (username && password) {
+          const user = await loginUser(username, password);
           onLogin(user);
-        } else {
-          onLogin({ name: email.split('@')[0], email, phone: 'N/A' });
         }
       }
+    } catch (err) {
+      setError(isRegistering ? 'Registration failed. Please try again.' : 'Invalid username or password.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,6 +96,17 @@ const LoginPage = ({ onLogin }) => {
                     />
                   </div>
                   <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-700 ml-1">Username</label>
+                    <input
+                      type="text"
+                      value={regUsername}
+                      onChange={(e) => setRegUsername(e.target.value)}
+                      className="w-full px-4 py-3 bg-[#f8fafc] border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
+                      placeholder="Choose a username"
+                      required={isRegistering}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-700 ml-1">Phone Number (Optional)</label>
                     <input
                       type="tel"
@@ -98,17 +119,31 @@ const LoginPage = ({ onLogin }) => {
                 </>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700 ml-1">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#f8fafc] border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
+              {isRegistering ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700 ml-1">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#f8fafc] border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700 ml-1">Username</label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#f8fafc] border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
+                    placeholder="Enter your username"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-700 ml-1">Password</label>
@@ -150,11 +185,15 @@ const LoginPage = ({ onLogin }) => {
               )}
 
               <div className="space-y-3 pt-2">
+                {error && (
+                  <p className="text-red-500 text-xs font-medium text-center">{error}</p>
+                )}
                 <button
                   type="submit"
-                  className="w-full bg-[#0a0a0a] text-white py-3.5 rounded-xl font-bold text-sm hover:bg-black transform active:scale-[0.98] transition-all shadow-md shadow-black/10"
+                  disabled={loading}
+                  className="w-full bg-[#0a0a0a] text-white py-3.5 rounded-xl font-bold text-sm hover:bg-black transform active:scale-[0.98] transition-all shadow-md shadow-black/10 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isRegistering ? "Create Account" : "Sign In"}
+                  {loading ? 'Please wait...' : isRegistering ? 'Create Account' : 'Sign In'}
                 </button>
                 
                 <button

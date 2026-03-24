@@ -20,11 +20,14 @@ const ProductPage = () => {
     division: ''
   });
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.price.toString().includes(searchTerm) ||
-    product.quantity.toString().includes(searchTerm)
-  );
+  const filteredProducts = products.filter(product => {
+    const s = searchTerm.toLowerCase();
+    return (
+      (product.name || '').toLowerCase().includes(s) ||
+      String(product.price    ?? '').includes(s) ||
+      String(product.quantity ?? '').includes(s)
+    );
+  });
 
   const handleAddProduct = () => {
     if (formData.name && formData.price && formData.quantity) {

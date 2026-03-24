@@ -26,13 +26,16 @@ const OrdersPage = () => {
   const paymentStatuses = ['Pending', 'Paid', 'Failed', 'Refunded'];
   const orderStatuses = ['Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
-  const filteredOrders = orders.filter(order =>
-    order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id.toString().includes(searchTerm) ||
-    order.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.orderStatus.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOrders = orders.filter(order => {
+    const s = searchTerm.toLowerCase();
+    return (
+      (order.customerName  || '').toLowerCase().includes(s) ||
+      (order.customerEmail || '').toLowerCase().includes(s) ||
+      String(order.id || '').includes(s) ||
+      (order.paymentStatus || '').toLowerCase().includes(s) ||
+      (order.orderStatus   || '').toLowerCase().includes(s)
+    );
+  });
 
   const handleAddOrder = () => {
     if (formData.customerName && formData.customerEmail && formData.shippingAddress) {
@@ -432,6 +435,11 @@ const OrdersPage = () => {
                       Add Product
                     </button>
                   </div>
+                  <datalist id="product-suggestions">
+                    {products.map(p => (
+                      <option key={p.id} value={p.name} />
+                    ))}
+                  </datalist>
                   {formData.products.map((product, index) => (
                     <div key={index} className="grid grid-cols-12 gap-2 mb-2">
                       <input
@@ -449,11 +457,6 @@ const OrdersPage = () => {
                         className="col-span-5 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500  bg-black text-white"
                         placeholder="Select or enter product"
                       />
-                      <datalist id="product-suggestions">
-                        {products.map(p => (
-                          <option key={p.id} value={p.name} />
-                        ))}
-                      </datalist>
                       <input
                         type="number"
                         value={product.quantity}
