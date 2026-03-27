@@ -103,12 +103,13 @@ export const DataProvider = ({ children }) => {
     if (!c) return c;
     return {
       ...c,
-      id:      c.customerId ?? c.customer_id ?? c.customer_Id ?? c.id ?? c._id ?? c.cid,
-      name:    c.name    || c.customerName  || c.customer_name  || c.fullName      || c.full_name || '',
-      email:   c.email   || c.emailAddress  || c.email_address  || '',
-      address: c.address || c.streetAddress || c.street_address || '',
-      state:   c.state   || c.stateName     || c.state_name     || '',
-      pincode: c.pincode || c.pinCode       || c.pin_code       || c.zipCode       || c.zip_code || c.postalCode || '',
+      id:        c.customerId ?? c.customer_id ?? c.customer_Id ?? c.id ?? c._id ?? c.cid,
+      name:      c.name    || c.customerName  || c.customer_name  || c.fullName      || c.full_name || '',
+      email:     c.email   || c.emailAddress  || c.email_address  || '',
+      address:   c.address || c.streetAddress || c.street_address || '',
+      state:     c.state   || c.stateName     || c.state_name     || '',
+      pincode:   c.pincode || c.pinCode       || c.pin_code       || c.zipCode       || c.zip_code || c.postalCode || '',
+      createdAt: c.createdAt || c.created_at  || c.createdDate    || c.create_date   || null,
     };
   };
 
@@ -145,13 +146,15 @@ export const DataProvider = ({ children }) => {
 
   // ── Customers ──────────────────────────────────────────────────────────────
   const addCustomer = async (customer) => {
+    const now = new Date().toISOString();
     try {
-      const n = normalizeCustomer(await createCustomer(customer));
+      const raw = await createCustomer(customer);
+      const n = normalizeCustomer({ createdAt: now, ...raw });
       setCustomers(prev => [...prev, n]);
       addNotification(`New customer '${n.name}' added`);
       return n;
     } catch {
-      const n = normalizeCustomer({ id: Date.now(), ...customer });
+      const n = normalizeCustomer({ id: Date.now(), createdAt: now, ...customer });
       setCustomers(prev => { const u = [...prev, n]; localStorage.setItem('customers', JSON.stringify(u)); return u; });
       addNotification(`New customer '${n.name}' added`);
       return n;
@@ -216,8 +219,9 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  const updateProduct = async (id, data) => {
+  const updateProduct = async (id, data, { localOnly = false } = {}) => {
     setProducts(prev => { const u = prev.map(p => String(p.id) === String(id) ? { ...p, ...data } : p); localStorage.setItem('products', JSON.stringify(u)); return u; });
+    if (localOnly) return;
     updateProd(id, data).then(res => {
       const u = normalizeProduct(res);
       setProducts(prev => prev.map(p => String(p.id) === String(id) ? u : p));

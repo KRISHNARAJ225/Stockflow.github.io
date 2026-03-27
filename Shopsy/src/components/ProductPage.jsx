@@ -19,12 +19,12 @@ const ProductPage = () => {
     salableStock: '',
     unsaleableStock: '',
     expiryDate: '',
-    division: ''
+    divisionName: ''
   });
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   const filteredProducts = products.filter(product => {
     const s = searchTerm.toLowerCase();
@@ -45,7 +45,7 @@ const ProductPage = () => {
         salableStock: parseInt(formData.salableStock) || 0,
         unsaleableStock: parseInt(formData.unsaleableStock) || 0,
         expiryDate: formData.expiryDate,
-        division: formData.division
+        divisionName: formData.divisionName
       });
       setFormData({ name: '', price: '', quantity: '', uom: 'kg', salableStock: '', unsaleableStock: '', expiryDate: '', division: '' });
       setShowAddModal(false);
@@ -62,7 +62,7 @@ const ProductPage = () => {
       salableStock: product.salableStock ? product.salableStock.toString() : '',
       unsaleableStock: product.unsaleableStock ? product.unsaleableStock.toString() : '',
       expiryDate: product.expiryDate || '',
-      division: product.division || ''
+      divisionName: product.divisionName || ''
     });
   };
 
@@ -75,7 +75,7 @@ const ProductPage = () => {
       salableStock: parseInt(formData.salableStock) || 0,
       unsaleableStock: parseInt(formData.unsaleableStock) || 0,
       expiryDate: formData.expiryDate,
-      division: formData.division
+      divisionName: formData.divisionName
     });
     setEditingProduct(null);
     setFormData({ name: '', price: '', quantity: '', uom: 'kg', salableStock: '', unsaleableStock: '', expiryDate: '', division: '' });
@@ -339,8 +339,8 @@ const ProductPage = () => {
                       Division
                     </label>
                     <select
-                      value={formData.division}
-                      onChange={(e) => setFormData({ ...formData, division: e.target.value })}
+                      value={formData.divisionName}
+                      onChange={(e) => setFormData({ ...formData, divisionName: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50/50 dark:bg-slate-800 dark:text-white transition-colors"
                     >
                       <option value="">Select division...</option>
@@ -476,8 +476,8 @@ const ProductPage = () => {
                       Division
                     </label>
                     <select
-                      value={formData.division}
-                      onChange={(e) => setFormData({ ...formData, division: e.target.value })}
+                      value={formData.divisionName}
+                      onChange={(e) => setFormData({ ...formData, divisionName: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50/50 dark:bg-slate-800 dark:text-white transition-colors"
                     >
                       <option value="">Select division...</option>
@@ -607,7 +607,7 @@ const ProductPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Division
                     </label>
-                    <p className="text-gray-900">{viewingProduct.division || 'N/A'}</p>
+                    <p className="text-gray-900">{viewingProduct.divisionName || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">

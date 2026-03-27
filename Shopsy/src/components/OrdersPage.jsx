@@ -31,7 +31,7 @@ const OrdersPage = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   const paymentStatuses = ['Pending', 'Paid', 'Failed', 'Refunded'];
   const orderStatuses = ['Processing', 'Shipped', 'Delivered', 'Cancelled'];
@@ -126,10 +126,8 @@ const OrdersPage = () => {
       for (const item of order.products) {
         const product = products.find(p => String(p.id) === String(item.productId));
         if (product) {
-          const currentQty = parseInt(product.quantity || 0);
-          const orderQty = parseInt(item.quantity || 0);
-          const newQty = currentQty + orderQty;
-          await updateProduct(product.id, { ...product, quantity: newQty });
+          const newQty = parseInt(product.quantity || 0) + parseInt(item.quantity || 0);
+          await updateProduct(product.id, { ...product, quantity: newQty }, { localOnly: true });
         }
       }
     }
@@ -358,6 +356,7 @@ const OrdersPage = () => {
                 <th className="px-6 py-4 font-semibold">Amount</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
+
             </thead>
             <tbody className="text-sm divide-y divide-gray-50">
               {filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order) => (

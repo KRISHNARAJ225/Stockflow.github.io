@@ -38,7 +38,7 @@ const CustomerPage = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   const validate = (data) => {
     const e = {};
@@ -156,8 +156,9 @@ const CustomerPage = () => {
               <thead>
                 <tr className="text-gray-400 text-xs uppercase tracking-wider">
                   <th className="px-6 py-4 font-semibold">Name</th>
-                  <th className="px-6 py-4 font-semibold">Email</th>
+                  <th className="px-6 py-4 font-semibold">Email</th>       
                   <th className="px-6 py-4 font-semibold">Country</th>
+                   <th className="px-6 py-4 font-semibold">State</th>
                   <th className="px-6 py-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
@@ -179,6 +180,9 @@ const CustomerPage = () => {
 
                       <td className="px-6 py-4">
                         <span className="px-2 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider">{customer.country || 'India'}</span>
+                      </td>
+                       <td className="px-6 py-4">
+                        <span className="px-2 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider">{customer.state || 'Tamilnadu'}</span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -511,6 +515,8 @@ const CustomerPage = () => {
                     <p className="text-sm text-gray-600">Country</p>
                     <p className="font-medium text-gray-900">{viewingCustomer.country || 'India'}</p>
                   </div>
+
+                 
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <Mail className="w-5 h-5 text-gray-400" />
@@ -535,11 +541,11 @@ const CustomerPage = () => {
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <Calendar className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-600">Member Since</p>
+                    <p className="text-sm text-gray-600">Created At</p>
                     <p className="font-medium text-gray-900">
-                      {viewingCustomer.createdAt
-                        ? new Date(viewingCustomer.createdAt).toLocaleDateString()
-                        : 'January 15, 2024'}
+                      {viewingCustomer.createdAt || viewingCustomer.created_at
+                        ? new Date(viewingCustomer.createdAt || viewingCustomer.created_at).toLocaleString()
+                        : 'Not available'}
                     </p>
                   </div>
                 </div>

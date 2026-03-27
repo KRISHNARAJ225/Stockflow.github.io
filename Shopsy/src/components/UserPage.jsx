@@ -9,7 +9,7 @@ const UserPage = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   const filteredUsers = registeredUsers.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,7 +59,6 @@ const UserPage = () => {
             <thead>
               <tr className="text-gray-400 text-xs uppercase tracking-wider">
                 <th className="px-6 py-4 font-semibold">Name</th>
-                <th className="px-6 py-4 font-semibold">Username</th>
                 <th className="px-6 py-4 font-semibold">Email</th>
                 <th className="px-6 py-4 font-semibold">Phone</th>
                 <th className="px-6 py-4 font-semibold">Role</th>
@@ -77,14 +76,13 @@ const UserPage = () => {
                       <span className="font-medium text-gray-900">{user.name || user.username}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-500 font-mono text-xs">{user.username || '—'}</td>
                   <td className="px-6 py-4 text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 text-gray-500">{user.phone || '-'}</td>
+                  <td className="px-6 py-4 text-gray-500">{user.phone || 'undefined'}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider">{user.role}</span>
                   </td>
                   <td className="px-6 py-4 text-gray-500">
-                    {user.registeredAt ? new Date(user.registeredAt).toLocaleDateString() : '-'}
+                    {user.registeredAt ? new Date(user.registeredAt).toLocaleDateString() : 'undefined'}
                   </td>
                 </tr>
               ))}
