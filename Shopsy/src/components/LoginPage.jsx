@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { loginUser, registerUser } from '../Service.js/AuthService';
+import AnimatedBear from './AnimatedBear';
 
 const LoginPage = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -49,12 +50,8 @@ const LoginPage = ({ onLogin }) => {
       <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-5xl flex overflow-hidden min-h-[600px]">
         {/* Left Side: Illustration */}
         <div className="hidden md:block w-1/2 relative bg-white p-2">
-          <div className="w-full h-full rounded-[20px] overflow-hidden relative">
-            <img 
-              src={isRegistering ? "/register.png" : "/Login.png"}
-              alt={isRegistering ? "Register" : "Login"} 
-              className="w-full h-full object-cover"
-            />
+          <div className="w-full h-full rounded-[20px] overflow-hidden relative border border-slate-100 shadow-sm">
+            <AnimatedBear color={isRegistering ? 'red' : 'white'} />
           </div>
         </div>
 

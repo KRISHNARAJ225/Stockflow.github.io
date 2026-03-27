@@ -81,6 +81,8 @@ const AppContent = () => {
     return path || 'dashboard';
   };
 
+  const isAdmin = currentUser?.name?.toLowerCase() === 'krish' || currentUser?.role === 'admin';
+
   if (validating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f4f7fe]">
@@ -93,7 +95,7 @@ const AppContent = () => {
     <>
       {!currentUser ? (
         <LoginPage onLogin={handleLogin} />
-      ) : (
+        ) : (
         <div className="App">
           <Layout
             currentUser={currentUser}
@@ -107,13 +109,13 @@ const AppContent = () => {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/customer" element={<CustomerPage />} />
-              <Route path="/category" element={<CategoryPage />} />
+              <Route path="/category" element={isAdmin ? <CategoryPage /> : <Navigate to="/dashboard" replace />} />
               <Route path="/products" element={<ProductPage />} />
               <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/user" element={<UserPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/user" element={isAdmin ? <UserPage /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/calendar" element={isAdmin ? <CalendarPage /> : <Navigate to="/dashboard" replace />} />
               <Route path="/help" element={<HelpPage />} />
-              <Route path="/settings" element={<SettingsPage currentUser={currentUser} onSettingsChange={handleSettingsChange} />} />
+              <Route path="/settings" element={isAdmin ? <SettingsPage currentUser={currentUser} onSettingsChange={handleSettingsChange} /> : <Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Layout>

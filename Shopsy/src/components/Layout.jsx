@@ -115,17 +115,19 @@ const Layout = ({ children, activePage, navigate, onLogout, currentUser, accentC
     }
   };
 
+  const isAdmin = currentUser?.name?.toLowerCase() === 'krish' || currentUser?.role === 'admin';
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-    { id: 'category',  label: 'Categories',  icon: Tag },
+    ...(isAdmin ? [{ id: 'category',  label: 'Categories',  icon: Tag }] : []),
     { id: 'products',  label: 'Product',     icon: Package },
-    { id: 'calendar',  label: 'Calendar',    icon: Calendar },
+    ...(isAdmin ? [{ id: 'calendar',  label: 'Calendar',    icon: Calendar }] : []),
     { id: 'orders',    label: 'Transaction', icon: ReceiptText },
   ];
 
   const othersItems = [
     { id: 'customer', label: 'Customer', icon: Users },
-    { id: 'user',     label: 'User',     icon: User },
+    ...(isAdmin ? [{ id: 'user',     label: 'User',     icon: User }] : []),
   ];
 
   // Sidebar nav button helper
@@ -221,7 +223,7 @@ const Layout = ({ children, activePage, navigate, onLogout, currentUser, accentC
               </div>
 
               {/* Settings */}
-              <NavBtn item={{ id: 'settings', label: 'Settings', icon: Settings }} />
+              {isAdmin && <NavBtn item={{ id: 'settings', label: 'Settings', icon: Settings }} />}
 
               <button 
                 onClick={() => navigate('/help')}
