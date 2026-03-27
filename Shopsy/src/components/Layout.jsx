@@ -27,7 +27,7 @@ import {
 import { useData } from '../contexts/DataContext';
 import { changePassword } from '../Service.js/AuthService';
 
-const Layout = ({ children, activePage, setActivePage, onLogout, currentUser, accentColor = '#1b2559', zoomLevel = 100 }) => {
+const Layout = ({ children, activePage, navigate, onLogout, currentUser, accentColor = '#1b2559', zoomLevel = 100 }) => {
   const [darkMode, setDarkMode]                   = useState(false);
   const [showProfileMenu, setShowProfileMenu]     = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -76,7 +76,7 @@ const Layout = ({ children, activePage, setActivePage, onLogout, currentUser, ac
   const handleSearchResultClick = (type, item) => {
     setSearchQuery(item.name);
     setShowSearchDropdown(false);
-    setActivePage(type === 'product' ? 'products' : 'customer');
+    navigate(type === 'product' ? '/products' : '/customer');
   };
 
   // Change password handler
@@ -135,8 +135,8 @@ const Layout = ({ children, activePage, setActivePage, onLogout, currentUser, ac
     return (
       <button
         key={item.id}
-        onClick={onClickOverride || (() => setActivePage(item.id))}
-        className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl transition-all duration-200 group ${
+        onClick={onClickOverride || (() => navigate(`/${item.id}`))}
+        className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer ${
           isActive
             ? 'text-white shadow-md'
             : darkMode
@@ -223,7 +223,10 @@ const Layout = ({ children, activePage, setActivePage, onLogout, currentUser, ac
               {/* Settings */}
               <NavBtn item={{ id: 'settings', label: 'Settings', icon: Settings }} />
 
-              <button className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl transition-all duration-200 group ${darkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+              <button 
+                onClick={() => navigate('/help')}
+                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer ${darkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              >
                 <div className="flex items-center gap-3">
                   <HelpCircle className="w-5 h-5 group-hover:text-current" />
                   {!isSidebarCollapsed && <span className="text-[14px] font-medium tracking-wide whitespace-nowrap">Help</span>}

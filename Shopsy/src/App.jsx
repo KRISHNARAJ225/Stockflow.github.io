@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { DataProvider, useData } from './contexts/DataContext';
 import { validateToken, logoutUser } from './Service.js/AuthService';
 import LoginPage from './components/LoginPage';
@@ -10,19 +11,21 @@ import OrdersPage from './components/OrdersPage';
 import UserPage from './components/UserPage';
 import CalendarPage from './components/CalendarPage';
 import SettingsPage from './components/SettingsPage';
+import HelpPage from './components/HelpPage';
 import Layout from './components/Layout';
 import './App.css';
 
 const AppContent = () => {
   const { setAuthToken, clearData, token } = useData();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('currentUser');
     return saved ? JSON.parse(saved) : null;
   });
-  const [activePage, setActivePage] = useState('dashboard');
   const [validating, setValidating] = useState(true);
   const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || '#1b2559');
-  const [zoomLevel, setZoomLevel]     = useState(() => parseInt(localStorage.getItem('zoomLevel') || '100', 10));
+  const [zoomLevel, setZoomLevel] = useState(() => parseInt(localStorage.getItem('zoomLevel') || '100', 10));
 
   const handleSettingsChange = ({ accentColor: c, zoomLevel: z }) => {
     if (c !== undefined) setAccentColor(c);
@@ -69,20 +72,13 @@ const AppContent = () => {
     setAuthToken(null);
     clearData();
     setCurrentUser(null);
-    setActivePage('dashboard');
+    navigate('/dashboard');
   };
 
-  const renderPage = () => {
-    switch (activePage) {
-      case 'customer':  return <CustomerPage />;
-      case 'category':  return <CategoryPage />;
-      case 'products':  return <ProductPage />;
-      case 'calendar':  return <CalendarPage />;
-      case 'orders':    return <OrdersPage />;
-      case 'user':      return <UserPage />;
-      case 'settings':  return <SettingsPage currentUser={currentUser} onSettingsChange={handleSettingsChange} />;
-      default:          return <Dashboard />;
-    }
+  // Get current page from URL path
+  const getCurrentPage = () => {
+    const path = location.pathname.slice(1); // Remove leading slash
+    return path || 'dashboard';
   };
 
   if (validating) {
@@ -101,13 +97,25 @@ const AppContent = () => {
         <div className="App">
           <Layout
             currentUser={currentUser}
-            activePage={activePage}
-            setActivePage={setActivePage}
+            activePage={getCurrentPage()}
+            navigate={navigate}
             onLogout={handleLogout}
             accentColor={accentColor}
             zoomLevel={zoomLevel}
           >
-            {renderPage()}
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/customer" element={<CustomerPage />} />
+              <Route path="/category" element={<CategoryPage />} />
+              <Route path="/products" element={<ProductPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/user" element={<UserPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/settings" element={<SettingsPage currentUser={currentUser} onSettingsChange={handleSettingsChange} />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
           </Layout>
         </div>
       )}
@@ -118,7 +126,9 @@ const AppContent = () => {
 function App() {
   return (
     <DataProvider>
-      <AppContent />
+      <Router>
+        <AppContent />
+      </Router>
     </DataProvider>
   );
 }

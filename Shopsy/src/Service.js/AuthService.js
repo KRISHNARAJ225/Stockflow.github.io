@@ -5,11 +5,13 @@ const apiFetch = async (path, body) => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    credentials: 'include'
   });
 
   const text = await res.text();
   let data;
   try { data = JSON.parse(text); } catch { data = { message: text }; }
+
 
   if (!res.ok) {
     throw new Error(data?.data?.message || data?.message || `Error ${res.status}`);

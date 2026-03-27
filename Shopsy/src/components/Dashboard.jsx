@@ -38,24 +38,18 @@ const Dashboard = () => {
   });
   const salesPerformanceData = Object.values(salesMap);
 
-  // ── Payment methods pie chart — from real paymentStatus / paymentMethod ────
-  const pmMap = {};
-  orders.forEach(o => {
-    const method = o.paymentMethod || o.paymentStatus || 'Other';
-    pmMap[method] = (pmMap[method] || 0) + 1;
-  });
-  const pmTotal = Object.values(pmMap).reduce((s, v) => s + v, 0) || 1;
-  const paymentMethodsData = Object.entries(pmMap).map(([name, val], i) => ({
-    name,
-    value: Math.round((val / pmTotal) * 100),
-    color: PIE_COLORS[name] || ['#1B2559','#828DF8','#E0E5F2','#4318FF'][i % 4],
-  }));
-  const pieData = paymentMethodsData.length > 0 ? paymentMethodsData : [
-    { name: 'E-Wallet',   value: 36, color: '#1B2559' },
-    { name: 'Cash',       value: 24, color: '#828DF8' },
-    { name: 'QRIS',       value: 18, color: '#E0E5F2' },
-    { name: 'Debit Card', value: 22, color: '#4318FF' },
+  // ── Payment methods pie chart (Replaced with Custom Metrics) ──
+  const totalPaid = orders.filter(o => o.paymentStatus === 'Paid').length;
+  const metricsData = [
+    { name: 'Total Customer', value: totalCustomers, color: '#4318FF' },
+    { name: 'Total Transaction', value: totalTransactions, color: '#FF2E93' },
+    { name: 'Total Paid', value: totalPaid, color: '#05CD99' }
   ];
+  const metricsSum = (totalCustomers + totalTransactions + totalPaid) || 1;
+  const pieData = metricsData.map(m => ({
+    ...m,
+    percent: Math.round((m.value / metricsSum) * 100)
+  }));
 
   // ── Revenue bar chart — weekly or monthly from real orders ─────────────────
   const buildWeekly = () => {
@@ -196,10 +190,9 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Payment Methods Pie Chart */}
         <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/50 flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800">Payment Methods</h3>
+            <h3 className="text-lg font-bold text-slate-800">KPIS Overview</h3>
             <button className="text-slate-400"><MoreHorizontal className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center relative">
@@ -209,15 +202,17 @@ const Dashboard = () => {
                   <Pie data={pieData} innerRadius={65} outerRadius={95} paddingAngle={2} dataKey="value" stroke="none">
                     {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
-                  <Tooltip formatter={(v) => `${v}%`} />
+                  <Tooltip formatter={(v, name, props) => [`${v} (${props.payload.percent}%)`, name]} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
                 <p className="text-2xl font-bold text-slate-800 tracking-tight">{totalTransactions.toLocaleString()}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Total Items</p>
               </div>
-              <div className="absolute top-[25%] left-[10%] bg-white px-2 py-1 rounded text-[10px] font-bold text-slate-600 shadow-sm">{pieData[0]?.value}%</div>
-              <div className="absolute top-[20%] right-[15%] bg-white px-2 py-1 rounded text-[10px] font-bold text-slate-600 shadow-sm">{pieData[1]?.value}%</div>
-              <div className="absolute bottom-[35%] right-[10%] bg-white px-2 py-1 rounded text-[10px] font-bold text-slate-600 shadow-sm">{pieData[2]?.value}%</div>
+              {/* Dynamic Percent Labels */}
+              <div className="absolute top-[25%] left-[10%] bg-white px-2 py-1 rounded text-[10px] font-bold text-slate-600 shadow-sm border border-slate-100">{pieData[0]?.percent}%</div>
+              <div className="absolute top-[20%] right-[15%] bg-white px-2 py-1 rounded text-[10px] font-bold text-slate-600 shadow-sm border border-slate-100">{pieData[1]?.percent}%</div>
+              <div className="absolute bottom-[35%] right-[10%] bg-white px-2 py-1 rounded text-[10px] font-bold text-slate-600 shadow-sm border border-slate-100">{pieData[2]?.percent}%</div>
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-6 w-full px-4">
               {pieData.map((p, i) => (

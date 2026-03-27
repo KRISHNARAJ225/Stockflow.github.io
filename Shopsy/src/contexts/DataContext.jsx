@@ -27,80 +27,109 @@ export const DataProvider = ({ children }) => {
 
   // Normalize order fields from backend to match UI expectations
   const normalizeOrder = (o) => {
-    // customer can be a nested object or flat fields
-    const custName  = o.customerName  || o.customer_name  || o.customer?.name  || (typeof o.customer === 'string' ? o.customer : '') || '';
-    const custEmail = o.customerEmail || o.customer_email || o.customer?.email || '';
-    const custPhone = o.customerPhone || o.customer_phone || o.customer?.phone || o.customer?.phoneNumber || '';
-    // products list — Spring Boot may call it orderItems, items, orderProducts
+    if (!o) return o;
+    // Handle customer as object or first element of array
+    const custObj = Array.isArray(o.customer) ? o.customer[0] : (o.customer || {});
+    
+    const cid = o.customerId || o.customer_id || custObj?.id || custObj?.customerId || custObj?.customer_id || '';
+    const pid = o.productId  || o.product_id  || o.product?.id  || '';
+    
+    // Improved customer info extraction
+    const custName  = o.customerName  || o.customer_name  || custObj?.name  || custObj?.customerName || custObj?.fullName || (typeof o.customer === 'string' ? o.customer : '') || '';
+    const custEmail = o.customerEmail || o.customer_email || custObj?.email || custObj?.emailAddress || '';
+    const custPhone = o.customerPhone || o.customer_phone || custObj?.phone || custObj?.phoneNumber || '';
+    
     const prods = Array.isArray(o.products)    ? o.products
                 : Array.isArray(o.orderItems)  ? o.orderItems
                 : Array.isArray(o.items)        ? o.items
                 : Array.isArray(o.orderProducts)? o.orderProducts
                 : [];
+    
+    // Calculate total if missing or zero
+    let total = parseFloat(o.totalAmount ?? o.total_amount ?? o.total ?? o.amount ?? o.grandTotal ?? 0);
+    if (total <= 0 && prods.length > 0) {
+      const subtotal = prods.reduce((sum, p) => sum + ((parseFloat(p.price) || 0) * (parseInt(p.quantity) || 0)), 0);
+      total = subtotal + parseFloat(o.gst || 0) + parseFloat(o.tax || 0) - parseFloat(o.discount || 0);
+    }
+
     return {
       ...o,
-      id:              o.id              ?? o.orderId      ?? o.order_id    ?? Date.now(),
+      id:              o.id              ?? o._id ?? o.orderId      ?? o.order_id    ?? Date.now(),
+      customerId:      cid,
+      productId:       pid,
       customerName:    custName,
       customerEmail:   custEmail,
       customerPhone:   custPhone,
-      shippingAddress: o.shippingAddress || o.shipping_address || o.deliveryAddress || o.address || '',
+      shippingAddress: o.shippingAddress || o.shipping_address || o.deliveryAddress || o.address || custObj?.address || '',
       shippingDate:    o.shippingDate    || o.shipping_date    || o.deliveryDate    || o.delivery_date || '',
       orderDate:       o.orderDate       || o.order_date       || o.createdAt       || o.created_at   || '',
       paymentStatus:   o.paymentStatus   || o.payment_status   || o.paymentMethod   || o.payment_method || 'Pending',
       orderStatus:     o.orderStatus     || o.order_status     || o.status          || 'Processing',
-      totalAmount:     parseFloat(o.totalAmount ?? o.total_amount ?? o.total ?? o.amount ?? o.grandTotal ?? 0),
+      totalAmount:     total,
       products:        prods,
     };
   };
 
   // Normalize category fields
-  const normalizeCategory = (c) => ({
-    ...c,
-    id:   c.id   ?? c.categoryId   ?? c.category_id,
-    name: c.name || c.categoryName || c.category_name || '',
-    type: c.type || c.categoryType || c.category_type || 'Physical Goods',
-  });
+  const normalizeCategory = (c) => {
+    if (!c) return c;
+    return {
+      ...c,
+      id:   c.id   ?? c.categoryId   ?? c.category_id   ?? c.divisionId   ?? c.division_id   ?? `cat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: c.name || c.categoryName || c.category_name || c.divisionName || c.division_name || '',
+      type: c.type || c.categoryType || c.category_type || 'Physical Goods',
+    };
+  };
 
   // Normalize product fields
-  const normalizeProduct = (p) => ({
-    ...p,
-    id:              p.id              ?? p.productId       ?? p.product_id,
-    name:            p.name            || p.productName     || p.product_name    || '',
-    price:           parseFloat(p.price ?? p.unitPrice ?? p.unit_price ?? p.sellingPrice ?? p.selling_price ?? 0),
-    quantity:        parseInt(p.quantity ?? p.stock ?? p.stockQuantity ?? p.stock_quantity ?? 0, 10),
-    uom:             p.uom             || p.unit            || p.unitOfMeasure   || p.unit_of_measure || 'pcs',
-    division:        p.division        || p.category?.name  || p.categoryName    || p.category_name   || p.divisionName || '',
-    salableStock:    parseInt(p.salableStock    ?? p.salable_stock    ?? p.availableStock ?? p.available_stock ?? p.quantity ?? 0, 10),
-    unsaleableStock: parseInt(p.unsaleableStock ?? p.unsaleable_stock ?? p.damagedStock   ?? p.damaged_stock  ?? 0, 10),
-    expiryDate:      p.expiryDate      || p.expiry_date     || p.expiry          || '',
-  });
+  const normalizeProduct = (p) => {
+    if (!p) return p;
+    return {
+      ...p,
+      id:              p.id              ?? p.productId       ?? p.product_id,
+      name:            p.name            || p.productName     || p.product_name    || '',
+      price:           parseFloat(p.price ?? p.unitPrice ?? p.unit_price ?? p.sellingPrice ?? p.selling_price ?? 0),
+      quantity:        parseInt(p.quantity ?? p.stock ?? p.stockQuantity ?? p.stock_quantity ?? 0, 10),
+      uom:             p.uom             || p.unit            || p.unitOfMeasure   || p.unit_of_measure || 'pcs',
+      division:        p.division        || p.category?.name  || p.categoryName    || p.category_name   || p.divisionName || '',
+      salableStock:    parseInt(p.salableStock    ?? p.salable_stock    ?? p.availableStock ?? p.available_stock ?? p.quantity ?? 0, 10),
+      unsaleableStock: parseInt(p.unsaleableStock ?? p.unsaleable_stock ?? p.damagedStock   ?? p.damaged_stock  ?? 0, 10),
+      expiryDate:      p.expiryDate      || p.expiry_date     || p.expiry          || '',
+    };
+  };
 
   // Normalize customer fields
-  const normalizeCustomer = (c) => ({
-    ...c,
-    id:      c.id      ?? c.customerId    ?? c.customer_id,
-    name:    c.name    || c.customerName  || c.customer_name  || c.fullName || c.full_name || '',
-    email:   c.email   || c.emailAddress  || c.email_address  || '',
-    phone:   c.phone   || c.phoneNumber   || c.phone_number   || c.mobile   || c.mobileNumber || '',
-    address: c.address || c.streetAddress || c.street_address || '',
-    state:   c.state   || c.stateName     || c.state_name     || '',
-    pincode: c.pincode || c.pinCode       || c.pin_code       || c.zipCode  || c.zip_code || c.postalCode || '',
-  });
+  const normalizeCustomer = (c) => {
+    if (!c) return c;
+    return {
+      ...c,
+      id:      c.customerId ?? c.customer_id ?? c.customer_Id ?? c.id ?? c._id ?? c.cid,
+      name:    c.name    || c.customerName  || c.customer_name  || c.fullName      || c.full_name || '',
+      email:   c.email   || c.emailAddress  || c.email_address  || '',
+      address: c.address || c.streetAddress || c.street_address || '',
+      state:   c.state   || c.stateName     || c.state_name     || '',
+      pincode: c.pincode || c.pinCode       || c.pin_code       || c.zipCode       || c.zip_code || c.postalCode || '',
+    };
+  };
 
   useEffect(() => {
     if (!token) return;
     getCustomers().then(d => setCustomers((Array.isArray(d) ? d : []).map(normalizeCustomer))).catch(() => {
-      const s = localStorage.getItem('customers'); if (s) setCustomers(JSON.parse(s));
+      const s = localStorage.getItem('customers'); if (s) setCustomers(JSON.parse(s).map(normalizeCustomer));
     });
     getCategories().then(d => setCategories((Array.isArray(d) ? d : []).map(normalizeCategory))).catch(() => {
-      const s = localStorage.getItem('categories'); if (s) setCategories(JSON.parse(s));
+      const s = localStorage.getItem('categories'); if (s) setCategories(JSON.parse(s).map(normalizeCategory));
     });
     getProducts().then(d => setProducts((Array.isArray(d) ? d : []).map(normalizeProduct))).catch(() => {
-      const s = localStorage.getItem('products'); if (s) setProducts(JSON.parse(s));
+      const s = localStorage.getItem('products'); if (s) setProducts(JSON.parse(s).map(normalizeProduct));
     });
     getOrders().then(d => setOrders((Array.isArray(d) ? d : []).map(normalizeOrder))).catch(() => {
-      const s = localStorage.getItem('orders'); if (s) setOrders(JSON.parse(s));
+      const s = localStorage.getItem('orders'); if (s) setOrders(JSON.parse(s).map(normalizeOrder));
     });
+
+    // Load registered users from localStorage
+    const savedUsers = localStorage.getItem('registeredUsers');
+    if (savedUsers) setRegisteredUsers(JSON.parse(savedUsers));
   }, [token]);
 
   const setAuthToken = (newToken) => {
@@ -130,21 +159,18 @@ export const DataProvider = ({ children }) => {
   };
 
   const updateCustomer = async (id, data) => {
-    try {
-      const u = normalizeCustomer(await updateCust(id, data));
+    // Optimistic: update UI immediately, fire API in background
+    setCustomers(prev => { const u = prev.map(c => String(c.id) === String(id) ? { ...c, ...data } : c); localStorage.setItem('customers', JSON.stringify(u)); return u; });
+    updateCust(id, data).then(res => {
+      const u = normalizeCustomer(res);
       setCustomers(prev => prev.map(c => String(c.id) === String(id) ? u : c));
-    } catch {
-      setCustomers(prev => { const u = prev.map(c => String(c.id) === String(id) ? { ...c, ...data } : c); localStorage.setItem('customers', JSON.stringify(u)); return u; });
-    }
+    }).catch(() => {/* 403 etc — local update already applied */});
   };
 
   const deleteCustomer = async (id) => {
-    try {
-      await deleteCust(id);
-      setCustomers(prev => prev.filter(c => String(c.id) !== String(id)));
-    } catch {
-      setCustomers(prev => { const u = prev.filter(c => String(c.id) !== String(id)); localStorage.setItem('customers', JSON.stringify(u)); return u; });
-    }
+    // Optimistic: remove from UI immediately, fire API in background
+    setCustomers(prev => { const u = prev.filter(c => String(c.id) !== String(id)); localStorage.setItem('customers', JSON.stringify(u)); return u; });
+    deleteCust(id).catch(() => {/* 403 etc — local delete already applied */});
   };
 
   // ── Categories ─────────────────────────────────────────────────────────────
@@ -163,21 +189,16 @@ export const DataProvider = ({ children }) => {
   };
 
   const updateCategory = async (id, data) => {
-    try {
-      const u = normalizeCategory(await updateCat(id, data));
-      setCategories(prev => prev.map(c => c.id === id ? u : c));
-    } catch {
-      setCategories(prev => { const u = prev.map(c => c.id === id ? { ...c, ...data } : c); localStorage.setItem('categories', JSON.stringify(u)); return u; });
-    }
+    setCategories(prev => { const u = prev.map(c => String(c.id) === String(id) ? { ...c, ...data } : c); localStorage.setItem('categories', JSON.stringify(u)); return u; });
+    updateCat(id, data).then(res => {
+      const u = normalizeCategory(res);
+      setCategories(prev => prev.map(c => String(c.id) === String(id) ? u : c));
+    }).catch(() => {});
   };
 
   const deleteCategory = async (id) => {
-    try {
-      await deleteCat(id);
-      setCategories(prev => prev.filter(c => c.id !== id));
-    } catch {
-      setCategories(prev => { const u = prev.filter(c => c.id !== id); localStorage.setItem('categories', JSON.stringify(u)); return u; });
-    }
+    setCategories(prev => { const u = prev.filter(c => String(c.id) !== String(id)); localStorage.setItem('categories', JSON.stringify(u)); return u; });
+    deleteCat(id).catch(() => {});
   };
 
   // ── Products ───────────────────────────────────────────────────────────────
@@ -196,21 +217,16 @@ export const DataProvider = ({ children }) => {
   };
 
   const updateProduct = async (id, data) => {
-    try {
-      const u = normalizeProduct(await updateProd(id, data));
-      setProducts(prev => prev.map(p => p.id === id ? u : p));
-    } catch {
-      setProducts(prev => { const u = prev.map(p => p.id === id ? { ...p, ...data } : p); localStorage.setItem('products', JSON.stringify(u)); return u; });
-    }
+    setProducts(prev => { const u = prev.map(p => String(p.id) === String(id) ? { ...p, ...data } : p); localStorage.setItem('products', JSON.stringify(u)); return u; });
+    updateProd(id, data).then(res => {
+      const u = normalizeProduct(res);
+      setProducts(prev => prev.map(p => String(p.id) === String(id) ? u : p));
+    }).catch(() => {});
   };
 
   const deleteProduct = async (id) => {
-    try {
-      await deleteProd(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
-    } catch {
-      setProducts(prev => { const u = prev.filter(p => p.id !== id); localStorage.setItem('products', JSON.stringify(u)); return u; });
-    }
+    setProducts(prev => { const u = prev.filter(p => String(p.id) !== String(id)); localStorage.setItem('products', JSON.stringify(u)); return u; });
+    deleteProd(id).catch(() => {});
   };
 
   // ── Orders ─────────────────────────────────────────────────────────────────
@@ -229,21 +245,16 @@ export const DataProvider = ({ children }) => {
   };
 
   const updateOrder = async (id, data) => {
-    try {
-      const u = normalizeOrder(await updateOrd(id, data));
-      setOrders(prev => prev.map(o => o.id === id ? u : o));
-    } catch {
-      setOrders(prev => { const u = prev.map(o => o.id === id ? { ...o, ...data } : o); localStorage.setItem('orders', JSON.stringify(u)); return u; });
-    }
+    setOrders(prev => { const u = prev.map(o => String(o.id) === String(id) ? { ...o, ...data } : o); localStorage.setItem('orders', JSON.stringify(u)); return u; });
+    updateOrd(id, data).then(res => {
+      const u = normalizeOrder(res);
+      setOrders(prev => prev.map(o => String(o.id) === String(id) ? u : o));
+    }).catch(() => {});
   };
 
   const deleteOrder = async (id) => {
-    try {
-      await deleteOrd(id);
-      setOrders(prev => prev.filter(o => o.id !== id));
-    } catch {
-      setOrders(prev => { const u = prev.filter(o => o.id !== id); localStorage.setItem('orders', JSON.stringify(u)); return u; });
-    }
+    setOrders(prev => { const u = prev.filter(o => String(o.id) !== String(id)); localStorage.setItem('orders', JSON.stringify(u)); return u; });
+    deleteOrd(id).catch(() => {});
   };
 
   // ── Users ──────────────────────────────────────────────────────────────────

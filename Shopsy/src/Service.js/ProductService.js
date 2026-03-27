@@ -1,6 +1,6 @@
 import apiFetch from './apiClient.js';
 
-const BASE = '/api/v1/products';
+const BASE = '/api/v1/product';
 
 export const getProducts   = ()         => apiFetch(BASE);
 export const getProduct    = (id)       => apiFetch(`${BASE}/${id}`);

@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { Search, User } from 'lucide-react';
+import Pagination from './Pagination';
 
 const UserPage = () => {
   const { registeredUsers } = useData();
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const filteredUsers = registeredUsers.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,7 +45,10 @@ const UserPage = () => {
               type="text"
               placeholder="Search users..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 bg-gray-900 border text-gray-400 border-gray-100 rounded-lg w-80 focus:outline-none focus:ring-2 focus:ring-blue-900/10 focus:border-blue-900 text-sm"
             />
           </div>
@@ -59,7 +67,7 @@ const UserPage = () => {
               </tr>
             </thead>
             <tbody className="text-sm divide-y divide-gray-50">
-              {filteredUsers.map((user) => (
+              {filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -83,6 +91,12 @@ const UserPage = () => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredUsers.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

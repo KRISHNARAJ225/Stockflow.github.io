@@ -5,7 +5,19 @@ const apiFetch = async (path, options = {}) => {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  let res;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, { 
+      credentials: 'include',
+      ...options, 
+      headers, 
+      signal: controller.signal 
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
   if (res.status === 204) return null;
 
   const text = await res.text();

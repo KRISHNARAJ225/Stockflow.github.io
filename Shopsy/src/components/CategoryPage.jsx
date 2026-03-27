@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FolderOpen, Plus, Edit2, Trash2, Eye, Search, X, Save, Tag, Package, Box, Archive, Filter, Download, Upload, Grid3X3, List } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import Pagination from './Pagination';
 
 const CategoryPage = () => {
   const { categories, addCategory, updateCategory, deleteCategory, products } = useData();
@@ -13,6 +14,10 @@ const CategoryPage = () => {
     name: '',
     type: 'Physical Goods'
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const categoryTypes = ['Physical Goods', 'Digital', 'Services'];
 
@@ -121,7 +126,10 @@ const CategoryPage = () => {
               type="text"
               placeholder="Search categories..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-lg w-80 focus:outline-none focus:ring-2 focus:ring-blue-900/10 focus:border-blue-900 text-sm"
             />
           </div>
@@ -144,7 +152,7 @@ const CategoryPage = () => {
         {viewMode === 'grid' ? (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCategories.map((category) => (
-              <div key={category.id} className="group p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-blue-900/10 hover:bg-white hover:shadow-xl transition-all duration-300">
+              <div key={category.id} className="group p-6 bg-white rounded-2xl border border-slate-100/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-500/30 transition-all duration-300 cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`p-3 bg-${getCategoryColor(category.type)}-50 text-${getCategoryColor(category.type)}-600 rounded-xl`}>
                     {getCategoryIcon(category.type)}
@@ -251,18 +259,7 @@ const CategoryPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 text-white">
-                  Category Type
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-4 py-3 border text-white border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50/50"
-                >
-                  {categoryTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
+      
               </div>
               <div className="flex gap-3 pt-4">
                 <button

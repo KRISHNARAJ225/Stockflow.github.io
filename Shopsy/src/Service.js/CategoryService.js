@@ -1,6 +1,6 @@
 import apiFetch from './apiClient.js';
 
-const BASE = '/api/v1/categories';
+const BASE = '/api/v1/divisions';
 
 export const getCategories   = ()         => apiFetch(BASE);
 export const getCategory     = (id)       => apiFetch(`${BASE}/${id}`);
