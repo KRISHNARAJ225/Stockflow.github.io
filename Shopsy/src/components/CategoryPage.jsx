@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FolderOpen, Plus, Edit2, Trash2, Eye, Search, X, Save, Tag, Package, Box, Archive, Filter, Download, Upload, Grid3X3, List } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import Pagination from './Pagination';
 
 const CategoryPage = () => {
-  const { categories, addCategory, updateCategory, deleteCategory, products } = useData();
+  const { categories, categoryPageData, fetchCategoriesPage, addCategory, updateCategory, deleteCategory, products } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -19,9 +19,13 @@ const CategoryPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
+  useEffect(() => {
+    fetchCategoriesPage(currentPage - 1, itemsPerPage, searchTerm);
+  }, [currentPage, searchTerm]);
+
   const categoryTypes = ['Physical Goods', 'Digital', 'Services'];
 
-  const filteredCategories = categories.filter(category =>
+  const displayedCategories = categoryPageData.content.filter(category =>
     (category.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (category.type || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -151,7 +155,7 @@ const CategoryPage = () => {
 
         {viewMode === 'grid' ? (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCategories.map((category) => (
+            {displayedCategories.map((category) => (
               <div key={category.id} className="group p-6 bg-white rounded-2xl border border-slate-100/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-500/30 transition-all duration-300 cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`p-3 bg-${getCategoryColor(category.type)}-50 text-${getCategoryColor(category.type)}-600 rounded-xl`}>
@@ -194,7 +198,7 @@ const CategoryPage = () => {
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-gray-50">
-                {filteredCategories.map((category) => (
+                {displayedCategories.map((category) => (
                   <tr key={category.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -223,6 +227,12 @@ const CategoryPage = () => {
             </table>
           </div>
         )}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={categoryPageData.totalElements}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* Add Category Modal */}

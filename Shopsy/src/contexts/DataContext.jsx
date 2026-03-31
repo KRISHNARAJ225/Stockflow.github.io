@@ -63,8 +63,8 @@ export const DataProvider = ({ children }) => {
       shippingAddress: o.shippingAddress || o.shipping_address || o.deliveryAddress || o.address || custObj?.address || '',
       shippingDate:    o.shippingDate    || o.shipping_date    || o.deliveryDate    || o.delivery_date || '',
       orderDate:       o.orderDate       || o.order_date       || o.createdAt       || o.created_at   || '',
-      paymentStatus:   o.paymentStatus   || o.payment_status   || o.paymentMethod   || o.payment_method || 'Pending',
-      orderStatus:     o.orderStatus     || o.order_status     || o.status          || 'Processing',
+      paymentStatus:   o.paymentStatus   || o.payment_status   || o.paymentMethod   || o.payment_method || 'PENDING',
+      orderStatus:     o.orderStatus     || o.order_status     || o.status          || 'PENDING',
       totalAmount:     total,
       products:        prods,
     };
@@ -113,19 +113,55 @@ export const DataProvider = ({ children }) => {
     };
   };
 
+  // Paginated states for list pages
+  const [customerPageData, setCustomerPageData] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0 });
+  const [categoryPageData, setCategoryPageData] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0 });
+  const [productPageData, setProductPageData] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0 });
+  const [orderPageData, setOrderPageData] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0 });
+
+  const fetchCustomersPage = async (page = 0, size = 10, search = '') => {
+    try {
+      const d = await getCustomers(page, size, search);
+      const arr = Array.isArray(d) ? d : (d?.content || []);
+      setCustomerPageData({ content: arr.map(normalizeCustomer), totalElements: d?.totalElements || arr.length, totalPages: d?.totalPages || 1, number: d?.number || 0 });
+    } catch {}
+  };
+  const fetchCategoriesPage = async (page = 0, size = 10, search = '') => {
+    try {
+      const d = await getCategories(page, size, search);
+      const arr = Array.isArray(d) ? d : (d?.content || []);
+      setCategoryPageData({ content: arr.map(normalizeCategory), totalElements: d?.totalElements || arr.length, totalPages: d?.totalPages || 1, number: d?.number || 0 });
+    } catch {}
+  };
+  const fetchProductsPage = async (page = 0, size = 10, search = '') => {
+    try {
+      const d = await getProducts(page, size, search);
+      const arr = Array.isArray(d) ? d : (d?.content || []);
+      setProductPageData({ content: arr.map(normalizeProduct), totalElements: d?.totalElements || arr.length, totalPages: d?.totalPages || 1, number: d?.number || 0 });
+    } catch {}
+  };
+  const fetchOrdersPage = async (page = 0, size = 10, search = '') => {
+    try {
+      const d = await getOrders(page, size, search);
+      const arr = Array.isArray(d) ? d : (d?.content || []);
+      setOrderPageData({ content: arr.map(normalizeOrder), totalElements: d?.totalElements || arr.length, totalPages: d?.totalPages || 1, number: d?.number || 0 });
+    } catch {}
+  };
+
   useEffect(() => {
     if (!token) return;
-    getCustomers().then(d => setCustomers((Array.isArray(d) ? d : []).map(normalizeCustomer))).catch(() => {
-      const s = localStorage.getItem('customers'); if (s) setCustomers(JSON.parse(s).map(normalizeCustomer));
+    // Fetch all for dashboard aggregations
+    getCustomers(0, 1000).then(d => { setCustomers((Array.isArray(d) ? d : (d?.content || [])).map(normalizeCustomer)); fetchCustomersPage(); }).catch(() => {
+      const s = localStorage.getItem('customers'); if (s) { setCustomers(JSON.parse(s).map(normalizeCustomer)); fetchCustomersPage(); }
     });
-    getCategories().then(d => setCategories((Array.isArray(d) ? d : []).map(normalizeCategory))).catch(() => {
-      const s = localStorage.getItem('categories'); if (s) setCategories(JSON.parse(s).map(normalizeCategory));
+    getCategories(0, 1000).then(d => { setCategories((Array.isArray(d) ? d : (d?.content || [])).map(normalizeCategory)); fetchCategoriesPage(); }).catch(() => {
+      const s = localStorage.getItem('categories'); if (s) { setCategories(JSON.parse(s).map(normalizeCategory)); fetchCategoriesPage(); }
     });
-    getProducts().then(d => setProducts((Array.isArray(d) ? d : []).map(normalizeProduct))).catch(() => {
-      const s = localStorage.getItem('products'); if (s) setProducts(JSON.parse(s).map(normalizeProduct));
+    getProducts(0, 1000).then(d => { setProducts((Array.isArray(d) ? d : (d?.content || [])).map(normalizeProduct)); fetchProductsPage(); }).catch(() => {
+      const s = localStorage.getItem('products'); if (s) { setProducts(JSON.parse(s).map(normalizeProduct)); fetchProductsPage(); }
     });
-    getOrders().then(d => setOrders((Array.isArray(d) ? d : []).map(normalizeOrder))).catch(() => {
-      const s = localStorage.getItem('orders'); if (s) setOrders(JSON.parse(s).map(normalizeOrder));
+    getOrders(0, 1000).then(d => { setOrders((Array.isArray(d) ? d : (d?.content || [])).map(normalizeOrder)); fetchOrdersPage(); }).catch(() => {
+      const s = localStorage.getItem('orders'); if (s) { setOrders(JSON.parse(s).map(normalizeOrder)); fetchOrdersPage(); }
     });
 
     // Load registered users from localStorage
@@ -151,11 +187,13 @@ export const DataProvider = ({ children }) => {
       const raw = await createCustomer(customer);
       const n = normalizeCustomer({ createdAt: now, ...raw });
       setCustomers(prev => [...prev, n]);
+      setCustomerPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New customer '${n.name}' added`);
       return n;
     } catch {
       const n = normalizeCustomer({ id: Date.now(), createdAt: now, ...customer });
       setCustomers(prev => { const u = [...prev, n]; localStorage.setItem('customers', JSON.stringify(u)); return u; });
+      setCustomerPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New customer '${n.name}' added`);
       return n;
     }
@@ -164,15 +202,18 @@ export const DataProvider = ({ children }) => {
   const updateCustomer = async (id, data) => {
     // Optimistic: update UI immediately, fire API in background
     setCustomers(prev => { const u = prev.map(c => String(c.id) === String(id) ? { ...c, ...data } : c); localStorage.setItem('customers', JSON.stringify(u)); return u; });
+    setCustomerPageData(prev => ({ ...prev, content: prev.content.map(c => String(c.id) === String(id) ? { ...c, ...data } : c) }));
     updateCust(id, data).then(res => {
       const u = normalizeCustomer(res);
       setCustomers(prev => prev.map(c => String(c.id) === String(id) ? u : c));
+      setCustomerPageData(prev => ({ ...prev, content: prev.content.map(c => String(c.id) === String(id) ? u : c) }));
     }).catch(() => {/* 403 etc — local update already applied */});
   };
 
   const deleteCustomer = async (id) => {
     // Optimistic: remove from UI immediately, fire API in background
     setCustomers(prev => { const u = prev.filter(c => String(c.id) !== String(id)); localStorage.setItem('customers', JSON.stringify(u)); return u; });
+    setCustomerPageData(prev => ({ ...prev, content: prev.content.filter(c => String(c.id) !== String(id)), totalElements: Math.max(0, prev.totalElements - 1) }));
     deleteCust(id).catch(() => {/* 403 etc — local delete already applied */});
   };
 
@@ -181,11 +222,13 @@ export const DataProvider = ({ children }) => {
     try {
       const n = normalizeCategory(await createCategory(category));
       setCategories(prev => [...prev, n]);
+      setCategoryPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New category '${n.name}' created`);
       return n;
     } catch {
       const n = normalizeCategory({ id: Date.now(), ...category });
       setCategories(prev => { const u = [...prev, n]; localStorage.setItem('categories', JSON.stringify(u)); return u; });
+      setCategoryPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New category '${n.name}' created`);
       return n;
     }
@@ -193,14 +236,17 @@ export const DataProvider = ({ children }) => {
 
   const updateCategory = async (id, data) => {
     setCategories(prev => { const u = prev.map(c => String(c.id) === String(id) ? { ...c, ...data } : c); localStorage.setItem('categories', JSON.stringify(u)); return u; });
+    setCategoryPageData(prev => ({ ...prev, content: prev.content.map(c => String(c.id) === String(id) ? { ...c, ...data } : c) }));
     updateCat(id, data).then(res => {
       const u = normalizeCategory(res);
       setCategories(prev => prev.map(c => String(c.id) === String(id) ? u : c));
+      setCategoryPageData(prev => ({ ...prev, content: prev.content.map(c => String(c.id) === String(id) ? u : c) }));
     }).catch(() => {});
   };
 
   const deleteCategory = async (id) => {
     setCategories(prev => { const u = prev.filter(c => String(c.id) !== String(id)); localStorage.setItem('categories', JSON.stringify(u)); return u; });
+    setCategoryPageData(prev => ({ ...prev, content: prev.content.filter(c => String(c.id) !== String(id)), totalElements: Math.max(0, prev.totalElements - 1) }));
     deleteCat(id).catch(() => {});
   };
 
@@ -209,11 +255,13 @@ export const DataProvider = ({ children }) => {
     try {
       const n = normalizeProduct(await createProduct(product));
       setProducts(prev => [...prev, n]);
+      setProductPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New product '${n.name}' added`);
       return n;
     } catch {
       const n = normalizeProduct({ id: Date.now(), ...product });
       setProducts(prev => { const u = [...prev, n]; localStorage.setItem('products', JSON.stringify(u)); return u; });
+      setProductPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New product '${n.name}' added`);
       return n;
     }
@@ -221,15 +269,18 @@ export const DataProvider = ({ children }) => {
 
   const updateProduct = async (id, data, { localOnly = false } = {}) => {
     setProducts(prev => { const u = prev.map(p => String(p.id) === String(id) ? { ...p, ...data } : p); localStorage.setItem('products', JSON.stringify(u)); return u; });
+    setProductPageData(prev => ({ ...prev, content: prev.content.map(p => String(p.id) === String(id) ? { ...p, ...data } : p) }));
     if (localOnly) return;
     updateProd(id, data).then(res => {
       const u = normalizeProduct(res);
       setProducts(prev => prev.map(p => String(p.id) === String(id) ? u : p));
+      setProductPageData(prev => ({ ...prev, content: prev.content.map(p => String(p.id) === String(id) ? u : p) }));
     }).catch(() => {});
   };
 
   const deleteProduct = async (id) => {
     setProducts(prev => { const u = prev.filter(p => String(p.id) !== String(id)); localStorage.setItem('products', JSON.stringify(u)); return u; });
+    setProductPageData(prev => ({ ...prev, content: prev.content.filter(p => String(p.id) !== String(id)), totalElements: Math.max(0, prev.totalElements - 1) }));
     deleteProd(id).catch(() => {});
   };
 
@@ -238,11 +289,13 @@ export const DataProvider = ({ children }) => {
     try {
       const n = normalizeOrder(await createOrder(order));
       setOrders(prev => [...prev, n]);
+      setOrderPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New transaction #ORD-${n.id.toString().padStart(4, '0')} created`);
       return n;
     } catch {
       const n = normalizeOrder({ id: Date.now(), orderDate: new Date().toISOString().split('T')[0], ...order });
       setOrders(prev => { const u = [...prev, n]; localStorage.setItem('orders', JSON.stringify(u)); return u; });
+      setOrderPageData(prev => ({ ...prev, content: [n, ...prev.content], totalElements: prev.totalElements + 1 }));
       addNotification(`New transaction #ORD-${n.id.toString().padStart(4, '0')} created`);
       return n;
     }
@@ -250,14 +303,17 @@ export const DataProvider = ({ children }) => {
 
   const updateOrder = async (id, data) => {
     setOrders(prev => { const u = prev.map(o => String(o.id) === String(id) ? { ...o, ...data } : o); localStorage.setItem('orders', JSON.stringify(u)); return u; });
+    setOrderPageData(prev => ({ ...prev, content: prev.content.map(o => String(o.id) === String(id) ? { ...o, ...data } : o) }));
     updateOrd(id, data).then(res => {
       const u = normalizeOrder(res);
       setOrders(prev => prev.map(o => String(o.id) === String(id) ? u : o));
+      setOrderPageData(prev => ({ ...prev, content: prev.content.map(o => String(o.id) === String(id) ? u : o) }));
     }).catch(() => {});
   };
 
   const deleteOrder = async (id) => {
     setOrders(prev => { const u = prev.filter(o => String(o.id) !== String(id)); localStorage.setItem('orders', JSON.stringify(u)); return u; });
+    setOrderPageData(prev => ({ ...prev, content: prev.content.filter(o => String(o.id) !== String(id)), totalElements: Math.max(0, prev.totalElements - 1) }));
     deleteOrd(id).catch(() => {});
   };
 
@@ -288,6 +344,8 @@ export const DataProvider = ({ children }) => {
   const value = {
     token, setAuthToken, clearData,
     customers, categories, products, orders, registeredUsers, notifications,
+    customerPageData, categoryPageData, productPageData, orderPageData,
+    fetchCustomersPage, fetchCategoriesPage, fetchProductsPage, fetchOrdersPage,
     addNotification,
     addCustomer, updateCustomer, deleteCustomer,
     addCategory, updateCategory, deleteCategory,

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, Plus, Edit2, Trash2, Eye, Search, X, Save, DollarSign, Calendar, AlertTriangle } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import Pagination from './Pagination';
 
 const ProductPage = () => {
-  const { products, addProduct, updateProduct, deleteProduct, categories } = useData();
+  const { products, productPageData, fetchProductsPage, addProduct, updateProduct, deleteProduct, categories } = useData();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('list'); // Default to list
@@ -26,7 +26,11 @@ const ProductPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredProducts = products.filter(product => {
+  useEffect(() => {
+    fetchProductsPage(currentPage - 1, itemsPerPage, searchTerm);
+  }, [currentPage, searchTerm]);
+
+  const displayedProducts = productPageData.content.filter(product => {
     const s = searchTerm.toLowerCase();
     return (
       (product.name || '').toLowerCase().includes(s) ||
@@ -185,7 +189,7 @@ const ProductPage = () => {
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-gray-50">
-                {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => {
+                {displayedProducts.map((product) => {
                   const status = getStockStatus(product.quantity);
                   return (
                     <tr key={product.id} className="hover:bg-green-50/50 hover:outline hover:outline-2 hover:outline-green-400 hover:-translate-y-0.5 transition-all text-sm">
@@ -222,7 +226,7 @@ const ProductPage = () => {
           </div>
         ) : (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => {
+            {displayedProducts.map((product) => {
               const status = getStockStatus(product.quantity);
               return (
                 <div key={product.id} className="group bg-white p-6 rounded-2xl border border-slate-100/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-500/30 transition-all duration-300 cursor-pointer relative overflow-hidden">
@@ -262,7 +266,7 @@ const ProductPage = () => {
         )}
         <Pagination
           currentPage={currentPage}
-          totalItems={filteredProducts.length}
+          totalItems={productPageData.totalElements}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
         />

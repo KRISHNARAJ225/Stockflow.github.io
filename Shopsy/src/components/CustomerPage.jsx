@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit2, Trash2, Eye, Search, X, Save, Mail, Phone, Calendar, MapPin, Filter, Download, Globe } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import Pagination from './Pagination';
@@ -22,7 +22,7 @@ const COUNTRIES = [
 ];
 
 const CustomerPage = () => {
-  const { customers, addCustomer, updateCustomer, deleteCustomer } = useData();
+  const { customers, customerPageData, fetchCustomersPage, addCustomer, updateCustomer, deleteCustomer } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -40,6 +40,10 @@ const CustomerPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  useEffect(() => {
+    fetchCustomersPage(currentPage - 1, itemsPerPage, searchTerm);
+  }, [currentPage, searchTerm]);
+
   const validate = (data) => {
     const e = {};
     if (!data.name?.trim()) e.name = 'Full name is required';
@@ -56,7 +60,7 @@ const CustomerPage = () => {
     return Object.keys(e).length === 0;
   };
 
-  const filteredCustomers = customers.filter(c =>
+  const displayedCustomers = customerPageData.content.filter(c =>
     (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -163,10 +167,10 @@ const CustomerPage = () => {
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-gray-50">
-                {filteredCustomers.length === 0 ? (
+                {displayedCustomers.length === 0 ? (
                   <tr><td colSpan={5} className="py-8 text-center text-gray-400 text-sm">No customers found</td></tr>
                 ) : (
-                  filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((customer) => (
+                  displayedCustomers.map((customer) => (
                     <tr key={customer.id} className="hover:bg-blue-50/50 hover:outline hover:outline-2 hover:outline-blue-400 hover:-translate-y-0.5 transition-all cursor-pointer">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -205,7 +209,7 @@ const CustomerPage = () => {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={filteredCustomers.length}
+            totalItems={customerPageData.totalElements}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
           />

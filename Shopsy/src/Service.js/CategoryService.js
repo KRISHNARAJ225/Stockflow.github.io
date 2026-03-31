@@ -2,7 +2,8 @@ import apiFetch from './apiClient.js';
 
 const BASE = '/api/v1/divisions';
 
-export const getCategories   = ()         => apiFetch(BASE);
+export const getCategories   = (page = 0, size = 1000, search = '') => 
+  apiFetch(`${BASE}?page=${page}&size=${size}${search ? `&search=${encodeURIComponent(search)}` : ''}`);
 export const getCategory     = (id)       => apiFetch(`${BASE}/${id}`);
 export const createCategory  = (data)     => apiFetch(BASE,           { method: 'POST',   body: JSON.stringify(data) });
 export const updateCategory  = (id, data) => apiFetch(`${BASE}/${id}`, { method: 'PUT',    body: JSON.stringify(data) });

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Edit2, Trash2, Eye, Search, X, Calendar, MapPin, CreditCard, Package, User } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import Pagination from './Pagination';
 
 const OrdersPage = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, customers, products, updateProduct } = useData();
+  const { orders, orderPageData, fetchOrdersPage, addOrder, updateOrder, deleteOrder, customers, products, updateProduct } = useData();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -33,10 +33,14 @@ const OrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const paymentStatuses = ['Pending', 'Paid', 'Failed', 'Refunded'];
-  const orderStatuses = ['Processing', 'Shipped', 'Delivered', 'Cancelled'];
+  useEffect(() => {
+    fetchOrdersPage(currentPage - 1, itemsPerPage, searchTerm);
+  }, [currentPage, searchTerm]);
 
-  const filteredOrders = orders.filter(order => {
+  const paymentStatuses = ['PENDING' ,'SUCCESS'];
+  const orderStatuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED' ,'CANCELLED'];
+
+  const displayedOrders = orderPageData.content.filter(order => {
     const s = searchTerm.toLowerCase();
     return (
       (order.customerName  || '').toLowerCase().includes(s) ||
@@ -102,8 +106,8 @@ const OrdersPage = () => {
       customerPhone: order.customerPhone || '',
       shippingAddress: order.shippingAddress || '',
       shippingDate: order.shippingDate || '',
-      paymentStatus: order.paymentStatus || 'Pending',
-      orderStatus: order.orderStatus || 'Processing',
+      paymentStatus: order.paymentStatus || 'PENDING',
+      orderStatus: order.orderStatus || 'PENDING',
       customerId: order.customerId || '',
       productId: order.productId || '',
       products: order.products?.length ? [...order.products] : [{ name: '', quantity: 1, price: '' }],
@@ -235,20 +239,19 @@ const OrdersPage = () => {
 
   const getPaymentStatusColor = (status) => {
     switch(status) {
-      case 'Paid': return 'green';
-      case 'Pending': return 'yellow';
-      case 'Failed': return 'red';
-      case 'Refunded': return 'gray';
+      case 'SUCCESS': return 'green';
+      case 'PENDING': return 'red';
       default: return 'gray';
     }
   };
 
   const getOrderStatusColor = (status) => {
     switch(status) {
-      case 'Delivered': return 'green';
-      case 'Shipped': return 'blue';
-      case 'Processing': return 'yellow';
-      case 'Cancelled': return 'red';
+      case 'DELIVERED': return 'green';
+      case 'CONFIRMED': return 'blue';
+      case 'PENDING': return 'yellow';
+      case 'CANCELLED': return 'red';
+      case  'SHIPPED': return 'orange'
       default: return 'gray';
     }
   };
@@ -359,7 +362,7 @@ const OrdersPage = () => {
 
             </thead>
             <tbody className="text-sm divide-y divide-gray-50">
-              {filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order) => (
+              {displayedOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-blue-50/50 hover:outline hover:outline-2 hover:outline-blue-400 hover:-translate-y-0.5 transition-all text-sm group cursor-pointer">
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -406,7 +409,7 @@ const OrdersPage = () => {
         </div>
         <Pagination
           currentPage={currentPage}
-          totalItems={filteredOrders.length}
+          totalItems={orderPageData.totalElements}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
         />

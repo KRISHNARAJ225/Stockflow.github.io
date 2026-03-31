@@ -17,12 +17,12 @@ const PY     = CY - 1;
 const PIE_COLORS = { 'E-Wallet': '#1B2559', 'Cash': '#828DF8', 'QRIS': '#E0E5F2', 'Debit Card': '#4318FF' };
 
 const Dashboard = () => {
-  const { customers, orders, products } = useData();
+  const { customers, orders, products, customerPageData, orderPageData } = useData();
   const [revenueView, setRevenueView]   = useState('weekly');
 
   // ── Stat cards ─────────────────────────────────────────────────────────────
-  const totalCustomers    = customers.length;
-  const totalTransactions = orders.length;
+  const totalCustomers    = customerPageData.totalElements || customers.length;
+  const totalTransactions = orderPageData.totalElements || orders.length;
   const totalSales        = products.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
   const totalIncome       = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
 
